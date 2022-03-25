@@ -1,0 +1,671 @@
+---
+title: "Calculating effect sizes (Cohen's d) for systematic review on semantic fluency and amyloid"
+output: html_notebook
+Authors: Emma Twait & Jet Vonk
+Date (last updated): June 24 2020 
+---
+
+## NOTE: FIRST GROUP IS ALWAYS AMYLOID NEGATIVE
+
+## install esc package
+## Lüdecke, Daniel. 2018. Effect Size Computation for Meta Analysis. 
+## https://CRAN.R-project.org/package=esc.
+install.packages("esc")
+
+```{r}
+library(esc)
+```
+
+
+###This is the adjusted function from the esc_beta code to calculate effect size for standardized regression coefficients with a continuous predictor (adjusted by Jet Vonk)
+```{r}
+#' @param beta The standardized beta coefficient.
+#' @param sdy The standard deviation of the dependent variable.
+#' @param totaln Total group sample size.
+#' @param es.type Type of effect size that should be returned.
+
+# Compute variance of d-type effect size
+esc.vd_tot <- function(d, totaln) {
+  (totaln) / (grp1n * grp2n) + (d * d) / (2 * (grp1n + grp2n))
+}
+
+# 95% confidence interval
+#' @importFrom stats qnorm
+lower_d <- function(d, v) d - stats::qnorm(.975) * sqrt(v)
+upper_d <- function(d, v) d + stats::qnorm(.975) * sqrt(v)
+
+
+esc_beta_cont <- function(beta, sdy, totaln,
+                     es.type = c("d", "g", "or", "logit", "r", "f", "eta", "cox.or", "cox.log"),
+                     study = NULL) {
+  # match  arguments
+  es.type <- match.arg(es.type)
+
+  b <- beta 
+
+  es <- b / sdy
+  v <- esc.vd(es, grp1n, grp2n)
+
+  # return effect size
+  esc_generic(
+    es = es,
+    v = v,
+    es.type = es.type,
+    grp1n = grp1n,
+    grp2n = grp2n,
+    info = "standardized regression coefficient",
+    study = study
+  )
+}
+```
+
+
+
+## Verfaillie (2019)
+## 63 (AB-=44, AB+=19)
+## picture naming
+## mean, sd
+## AB-=79.1 (10.3), AB+= 82.0 (3.3)
+## semantic fluency
+## mean, sd
+## AB-=24.2 (5.7), AB+=23.6 (4.7)
+```{r}
+Verfaillie_PN <- esc_mean_sd(grp1m = 79.1, grp1sd = 10.3, grp1n = 44,
+            grp2m = 82.0, grp2sd = 3.3, grp2n = 19, es.type = "d")
+Verfaillie_SF <- esc_mean_sd(grp1m = 24.2, grp1sd = 5.7, grp1n = 44,
+            grp2m = 23.6, grp2sd = 4.7, grp2n = 19, es.type = "d")
+Verfaillie_PN
+Verfaillie_SF
+```
+
+
+## Verberk (2020)
+## 241
+## picture naming
+## standardized beta ± SE
+## -0.15 ± 0.08 (SDy = 0.2)
+## semantic fluency
+## standardized beta ± SE
+## 0.03 ± 0.06 (SDy = 6)
+```{r}
+Verberk_PN <- -0.15/.2
+Verberk_SF <- 0.03/6
+Verberk_PN 
+Verberk_SF
+```
+
+  
+## Mielke (2016)
+## AB+=81, AB-=383
+## picture naming
+## b (SE)
+##-0.16 (0.24)
+## SE -> SD
+## 0.24*sqrt(464)
+## b (SD)
+## -0.16 (5.20)
+## mean, sd
+## AB+=56.4 (3.3), AB-=56.6 (3.3)
+## semantic fluency
+## b (SE)
+## 0.05 (0.22)
+## SE -> SD
+## 0.05*sqrt(464)
+## b (SD)
+## 0.05 (1.08)
+## mean, sd
+## AB+=49.1 (9.9), AB-=49.8 (10.1)
+
+Mielke_PN_b <- esc_beta(beta=-0.16, sdy=5.20, grp1n=383, grp2n=81, es.type = "d")
+Mielke_SF_b <-esc_beta(beta=-0.05, sdy=1.08, grp1n=383, grp2n=81, es.type = "d")
+
+```{r}
+Mielke_PN_c <-esc_mean_sd(grp1m = 56.6, grp1sd = 3.3, grp1n = 383,
+                          grp2m = 56.4, grp2sd = 3.3, grp2n = 81, es.type = "d")
+Mielke_SF_c <- esc_mean_sd(grp1m = 49.8, grp1sd = 10.1, grp1n = 383,
+                           grp2m = 49.1, grp2sd = 9.9, grp2n = 81, es.type = "d")
+Mielke_PN_c
+Mielke_SF_c
+```
+                    
+
+## Hassentab (2016)
+## 264 (TOTAL AB-=177,AB+=87; 65-74 AB-=127, AB+=53; 75+ AB-=50, AB+=34)
+## picture naming
+## 65-74
+## mean, sd
+## AB-= 55.88 (4.25), AB+= 56.58 (4.17)
+## 75+
+## mean, sd
+## AB-=53.88 (5.21), AB+=51.59 (6.38)
+## semantic fluency
+## 65-74
+## mean, sd
+## ANIMALS AB-=21.14 (5.15), AB+=21.82(4.83); VEGETABLES AB-=15.05 (4.16), AB+=14.97 (4.50)
+## 75+
+## ANIMALS AB-=18.31 (4.71), AB+=16.91 (3.87); VEGETABLES AB-=14.14 (4.08), AB+=11.96 (4.03)
+
+Hassentab_PN_young <- esc_mean_sd(grp1m = 55.88, grp1sd = 4.25, grp1n = 127,
+                                  grp2m = 56.58, grp2sd = 4.17, grp2n = 53, es.type = "d")
+Hassentab_PN_old <-esc_mean_sd(grp1m = 53.88, grp1sd = 5.21, grp1n = 50,
+                               grp2m = 51.59, grp2sd = 6.38, grp2n = 34, es.type = "d")
+Hassentab_SF_young_animals <- esc_mean_sd(grp1m = 21.14, grp1sd = 5.15, grp1n = 127,
+                                          grp2m = 21.82, grp2sd = 4.83, grp2n = 53, es.type = "d")
+Hassentab_SF_young_vegetables <- esc_mean_sd(grp1m = 15.05, grp1sd = 4.16, grp1n = 127,
+                                            grp2m = 14.97, grp2sd = 4.50, grp2n = 53, es.type = "d")
+Hassentab_SF_old_animals <- esc_mean_sd(grp1m = 18.31, grp1sd = 4.71, grp1n = 50,
+                                        grp2m = 16.91, grp2sd = 3.87, grp2n = 34, es.type = "d")
+Hassentab_SF_old_vegetables <- esc_mean_sd(grp1m = 14.14, grp1sd = 4.08, grp1n = 50,
+                                          grp2m = 11.96, grp2sd = 4.03, grp2n = 34, es.type = "d")
+
+## Li (2007)
+## 72 (AB-=51, AB+=21)
+## semantic fluency
+## mean, sd
+## AB-=23 (6); AB+=20 (5)
+
+```{r}
+Li_SF <- esc_mean_sd(grp1m = 23, grp1sd = 6, grp1n = 51,
+                     grp2m = 20, grp2sd = 5, grp2n = 21, es.type = "d")
+Li_SF
+```
+
+
+
+## Edmonds (2015)
+## 570 (stage 0 = 142, stage 1 = 48, stage 2 = 173, stage 3 = 50, SNAP = 138; 
+## 0 markers=142, 1 marker=190, 2 markers=188, 3 markers=50)
+## picture naming
+## mean, sd STAGE 0
+## 28.0 (1.8)
+## mean, sd STAGE 1
+## 28.2 (1.7)
+## mean, sd STAGE 2
+## 27.8 (2.3)
+## mean, sd STAGE 3
+## 26.4 (2.6)
+## mean, sd SNAP
+## 28.1 (2.2)
+## mean, sd 0 markers
+## 28.0 (1.8)
+## mean, sd 1 marker
+## 28.2 (1.9)
+## mean, sd 2 markers
+## 27.6 (2.4)
+## mean, sd 3 markers
+## 26.4 (2.6)
+
+## Payoux (2015)
+## 271 (AB-=158, AB+=77)
+## semantic fluency
+## mean, sd
+## AB-=26.87 (7.12), AB+=25.23 (6.51)
+
+```{r}
+Payoux_SF <- esc_mean_sd(grp1m = 26.87, grp1sd = 7.12, grp1n = 158,
+                         grp2m = 25.23, grp2sd = 6.51, grp2n = 77, es.type = "d")
+Payoux_SF
+```
+
+
+
+## Um (2016)
+## 50 (AB-=34, AB+= 16)
+## picture naming
+## mean, sd
+## AB-=11.1 (3.1), AB+= 12.1 (2.3)
+## semantic fluency
+## mean, sd
+## AB-=14.3 (2.7), AB+= 13.7 (3.2)
+
+```{r}
+Um_PN <- esc_mean_sd(grp1m = 11.1, grp1sd = 3.1, grp1n = 34,
+                     grp2m = 12.1, grp2sd = 2.3, grp2n = 16, es.type = "d")
+Um_SF <- esc_mean_sd(grp1m = 14.3, grp1sd = 2.7, grp1n = 34,
+                     grp2m = 13.7, grp2sd = 3.2, grp2n = 16, es.type = "d")
+Um_PN
+Um_SF
+```
+
+
+
+## Papp (2017)
+## 279 (AB+=70, AB-=209)
+## semantic fluency
+## mean, sd
+## category only AB+= 44.93 (9.97), AB-= 44.24 (10.02)
+##ANIMALS AB+= 18.19 (4.50), AB-=17.73 (5.25)
+
+```{r}
+Papp_SF <- esc_mean_sd(grp1m = 17.73, grp1sd = 5.25, grp1n = 209,
+                       grp2m = 18.19, grp2sd = 4.50, grp2n = 70, es.type = "d")
+Papp_SF
+```
+
+
+
+## Amariglio (2012)
+## 131 AB-= 97, AB+= 34
+## picture naming
+## mean, sd
+## AB-=28.3 (2), AB+= 27.8 (1.6)
+
+```{r}
+Amariglio_PN <- esc_mean_sd(grp1m = 28.3, grp1sd = 2.0, grp1n = 97,
+                            grp2m = 27.8, grp2sd = 1.6, grp2n = 34, es.type = "d")
+Amariglio_PN
+```
+
+
+
+## Lim (2013c)
+## 178 (AB-= 123, AB+= 55)
+## picture naming
+## mean, sd
+## AB-= 28.06 (2.76), AB+= 28.33 (2.70)
+## semantic fluency
+## mean, sd
+## AB-= 38.30 (8.33), AB+= 39.60 (8.27)
+
+```{r}
+Lim_PN <- esc_mean_sd(grp1m = 28.06, grp1sd = 2.76, grp1n = 123,
+                      grp2m = 28.33, grp2sd = 2.70, grp2n = 55, es.type = "d")
+Lim_PN
+```
+
+
+Lim_SF <- esc_mean_sd(grp1m = 38.30, grp1sd = 8.33, grp1n = 123,
+                      grp2m = 39.60, grp2sd = 8.27, grp2n = 55, es.type = "d")
+
+## Doraiswamy (2014)
+## 67 (AB+= 10, AB-=57)
+## semantic fluency
+## mean, sd
+## ANIMALS AB+=18.30 (4.45), AB-=20.00 (4.24) VEGETABLES AB+=13.10 (3.21), AB-=14.02 (3.51)
+
+```{r}
+Doraiswamy_SF_animals <- esc_mean_sd(grp1m = 20.00, grp1sd = 4.24, grp1n = 57,
+                                     grp2m = 18.30, grp2sd = 4.45, grp2n = 10, es.type = "d")
+Doraiswamy_SF_animals
+```
+
+
+Doraiswamy_SF_vegetables <- esc_mean_sd(grp1m = 14.02, grp1sd = 3.51, grp1n = 57,
+                                     grp2m = 13.10, grp2sd = 3.21, grp2n = 10, es.type = "d")
+
+## Dubois (2018)
+## 318 A+= 88, A-= 230
+## picture naming
+## mean, sd
+## AB+=79.22 (1.08), AB-=79.20 (1.12)
+## semantic fluency
+## mean, sd
+## A+= 30.60 (6.10), AB-= 31.60 (7.44)
+
+```{r}
+Dubois_PN <- esc_mean_sd(grp1m = 79.20, grp1sd = 1.12, grp1n = 230,
+                         grp2m = 79.22, grp2sd = 1.08, grp2n = 88, es.type = "d")
+Dubois_SF <- esc_mean_sd(grp1m = 31.60, grp1sd = 7.44, grp1n = 230,
+                         grp2m = 30.60, grp2sd = 6.10, grp2n = 88, es.type = "d")
+Dubois_PN
+Dubois_SF
+```
+
+
+
+
+## Price (2009)
+## 97 (AB-=59, AB+=38)
+## picture naming
+## mean, SE
+## AB-=54.0, 0.9; AB+= 54.1, 1.1
+## limbic plaque r, N
+## -0.07, 38
+## neocorex plaque r, N
+## -0.01, 36
+## limbic SPs r, N
+## -0.02, 30
+## neocortex SPs r, N
+## 0.11, 31
+## semantic fluency
+## mean, SE
+## AB-= 16.7, 0.9; AB+= 15.5, 1.2
+## limbic plaque r, N
+## 0.12, 42
+## neocorex plaque r, N
+## 0.21, 39
+## limbic SPs r, N
+## 0.23, 32
+## neocortex SPs r, N
+## 0.25, 35
+
+
+```{r}
+Price_PN_cat <- esc_mean_se(grp1m = 54.0, grp1se = 0.9, grp1n = 59,
+                        grp2m = 54.1, grp2se = 1.1, grp2n = 38, es.type = "d")
+Price_SF_cat <- esc_mean_se(grp1m = 16.7, grp1se = 0.9, grp1n = 59,
+                        grp2m = 15.5, grp2se = 1.2, grp2n = 38, es.type = "d")
+Price_PN_cat
+Price_SF_cat
+```
+
+
+Price_PN_LP <- esc_rpb(r = -0.07, totaln = 38, es.type = "d")
+Price_PN_NP <- esc_rpb(r = -0.01, totaln = 36, es.type = "d")
+Price_PN_LS <- esc_rpb(r = -0.02, totaln = 30, es.type = "d")
+Price_PN_NS <- esc_rpb(r = 0.11, totaln = 31, es.type = "d")
+Price_SF_LP <- esc_rpb(r = 0.12, totaln = 42, es.type = "d")
+Price_SF_NP <- esc_rpb(r = 0.21, totaln = 39, es.type = "d")
+Price_SF_LS <- esc_rpb(r = 0.23, totaln = 32, es.type = "d")
+Price_SF_NS <- esc_rpb(r = 0.25, totaln = 35, es.type = "d")
+
+## Sperling (2013)
+## 78 (AB+=11, AB-=67 VISUAL; AB+=18, AB-=60 SUVR)
+## semantic fluency
+## r VEGETABLES, SUVr
+## 0.002
+## r ANIMALS
+## 0.017
+## mean, SE, SUVR
+## VEGETABLES AB-=14.0 (0.4), AB+=13.8 (1.0) mean, SE ANIMALS AB-=20.2 (0.5), AB+=19.1 (1.5)
+## mean, SE, visual
+## VEGETABLES AB-=13.9 (0.4), AB+=14.2 (1.4), ANIMALS AB-=19.9 (0.5), AB+=20.1 (2.2)
+
+```{r}
+Sperling_SF_r_animals <- esc_rpb(r = 0.017, grp1n = 60, grp2n = 18, es.type = "d")
+Sperling_SF_SUVR_animals <- esc_mean_se(grp1m = 20.2, grp1se = 0.5, grp1n = 60,
+                                        grp2m = 19.1, grp2se = 1.5, grp2n = 18, es.type = "d")
+Sperling_SF_r_animals
+Sperling_SF_SUVR_animals
+```
+
+
+
+## Snitz (2020)
+## 118 (AB-=84, AB+=34)
+## semantic fluency
+## standardized estimate, 95% CI global
+## 0.07 (-0.25, 0.11)
+
+## Sala Llonch (2015)
+## 89 (AB-=62, AB+27)
+## semantic fluency
+## mean, sd, range
+## AB-=20.69 (5.22) (10-32), AB+=20.63 (6.04) (5-30)
+
+```{r}
+SalaLlonch_SF <- esc_mean_sd(grp1m = 20.69, grp1sd = 5.22, grp1n = 62,
+                             grp2m = 20.63, grp2sd = 6.04, grp2n = 27, es.type = "d")
+SalaLlonch_SF
+```
+
+
+
+## Oh (2011)
+## 52 AB-=33, AB+=19
+## picture naming
+## mean, sd
+## AB-= 14.79 (0.41), AB+= 14.47 (0.90)
+
+
+```{r}
+Oh_2011_PN <- esc_mean_sd(grp1m = 14.79, grp1sd = 0.41, grp1n = 33,
+                          grp2m = 14.47, grp2sd = 0.90, grp2n = 19, es.type = "d")
+Oh_2011_PN 
+```
+                          
+
+## Oh (2012)
+## 189 (AB-= 34, AB+= 18)
+## semantic fluency
+## mean, range, SD
+## AB-=15.84 (6-30) 5.04; AB+= 16.41 (6-26) 4.96 VEGETABLES AB-=20.00 (7-31) 4.97; AB+= 22.35 (10-46) 7.69 ANIMALS
+
+```{r}
+Oh_2012_SF_vegetables <- esc_mean_sd(grp1m = 15.84, grp1sd = 5.04, grp1n = 34,
+                                     grp2m = 16.41, grp2sd = 4.96, grp2n = 18, es.type = "d")
+Oh_2012_SF_animals <- esc_mean_sd(grp1m = 20.00, grp1sd = 4.97, grp1n = 34,
+                                  grp2m = 22.35, grp2sd = 7.69, grp2n = 18, es.type = "d")
+Oh_2012_SF_animals
+```
+
+
+
+## Lee (2020)
+## 97 (AB+=63, AB-=34)
+## picture naming
+## r
+## 0.23
+
+```{r}
+Lee_PN <- esc_rpb(r = 0.023, grp1n = 34, grp2n = 63, es.type = "d")
+Lee_PN
+```
+
+
+#Harrington
+#categorical: Harrington_SF <- esc_mean_sd(grp1m = 43.47, grp1sd = 8.70, grp1n = 277,
+#                                    grp2m = 41.09, grp2sd = 10.81, grp2n = 58, es.type = "d")
+                                    
+```{r}
+Harrington_SF <- esc_f(f=3.07,grp1n = 277,grp2n = 58,es.type = "d")
+Harrington_SF
+```
+
+#Mathis
+#SF: AB-=15.9 (3.6), AB+=15.4 (3.6)
+#152 (AB-=74, AB+=78)
+```{r}
+Mathis_SF <- esc_mean_sd(grp1m = 15.9, grp1sd = 3.6, grp1n = 74,
+                                     grp2m = 15.4, grp2sd =3.6, grp2n = 78, es.type = "d")
+Mathis_SF
+```
+
+#Bennett
+#PN:AB-=14.0 (1.1); AB+=13.5 (1.2)
+#SF:AB-=32.4 (8.1); AB+=29.3 (7.9)
+#134 (AB-=84, AB+=50)
+```{r}
+Bennett_PN <- esc_mean_sd(grp1m = 14, grp1sd = 1.1, grp1n = 84,
+                                     grp2m = 13.5, grp2sd = 1.2, grp2n = 50, es.type = "d")
+Bennett_PN
+
+Bennett_SF <- esc_mean_sd(grp1m = 32.4, grp1sd = 8.1, grp1n = 84,
+                                     grp2m = 29.3, grp2sd = 7.9, grp2n = 50, es.type = "d")
+Bennett_SF
+```
+
+#Bos
+#SF:AB-= 21.6 (5.7), AB+=20.9 (5.5)
+#(AB-=526, AB+=190)
+```{r}
+Bos_SF <- esc_mean_sd(grp1m = 21.6, grp1sd = 5.7, grp1n = 526,
+                                     grp2m = 20.9, grp2sd = 5.5, grp2n = 190, es.type = "d")
+Bos_SF
+```
+
+
+###########Cochrane formula combining two groups
+```{r}
+Calc2 <- function(n1,m1,sd1,n2,m2,sd2) # n mean and SD of two groups
+{
+  out<-cat("grp1"," n=",n1," mean=",m1," SD=", sd1, "\n")
+  out<-cat("grp2"," n=",n2," mean=",m2," SD=", sd2, "\n")
+  tn = n1 + n2
+  tmean = (n1*m1 + n2*m2) / (n1 + n2)
+  tsd = sqrt(((n1-1)*sd1^2 + (n2-1)*sd2^2 + n1 * n2 / (n1 + n2) * (m1^2 + m2^2 - 2 * m1 * m2)) / (n1 + n2 -1))
+  out<-cat("grp1+2"," n=",tn," mean=",tmean," SD=", tsd, "\n")
+  c(tn, tmean, tsd)
+}
+
+#example
+#ar <- Calc2(g1[1],g1[2],g1[3],g2[1],g2[2],g2[3]) # combine group 1+2
+#ar <- Calc2(ar[1],ar[2],ar[3],g3[1],g3[2],g3[3]) # add grp 3 to result of combined 1+2
+```
+
+
+#Clark
+```{r}
+ABneg <- Calc2(215,24.2,.5,25,23.3,1.2) # combine group 1+3
+ABpos <- Calc2(46,23.9,.8,28,22.4,1.2) # combine group 2+4
+```
+
+#ABneg: n= 240  mean= 24.10625  SD= 0.6665989 
+#ABpos: n= 74  mean= 23.33243  SD= 1.20979 
+```{r}
+Clark_SF <- esc_mean_sd(grp1m = 24.10625, grp1sd = 0.6665989, grp1n = 240,
+                           grp2m = 23.33243, grp2sd = 1.20979, grp2n = 74, es.type = "d")
+Clark_SF
+```
+
+#Edmonds
+
+#PICTURE NAMING
+#stage 0: 28.0 (1.8) n=142
+#st.SNAP: 28.1 (2.2) n=138
+#stage 1: 28.2 (1.7) n=48
+#stage 2: 27.8 (2.3) n=173
+#stage 3: 26.4 (2.6) n=50
+```{r}
+ABneg <- Calc2(142,28,1.8,138,28.1,2.2) # combine group 0+SNAP
+
+#ABpos1 <- Calc2(48,28.2,1.7,173,27.8,2.3) # combine group 1+2
+ABpostot <- Calc2(221,27.88688,2.186448,50,26.4,2.6) # combine group 1+2 + 3
+```
+#ABneg: n= 280  mean= 28.04929  SD= 2.004135 
+#ABpos: n= 271  mean= 27.61255  SD= 2.335798 
+```{r}
+Edmonds_PN <- esc_mean_sd(grp1m = 28.04929, grp1sd = 2.004135, grp1n = 280,
+                           grp2m = 27.61255, grp2sd = 2.335798, grp2n = 271, es.type = "d")
+Edmonds_PN
+```
+
+#SEMANTIC FLUENCY
+#mean, sd STAGE 0:  20.3 (5.0) 142
+#mean, sd SNAP	 :  20.9 (5.1) 138
+#mean, sd STAGE 1:	20.4 (5.3) 48
+#mean, sd STAGE 2:	20.2 (4.7) 173
+#mean, sd STAGE 3:	16.1 (3.9) 50
+```{r}
+ABneg <- Calc2(142,20.3,5.0,138,20.9,5.1) # combine group 0+SNAP
+
+#ABpos1 <- Calc2(48,20.4,5.3,173,20.2,4.7) # combine group 1+2
+ABpostot <- Calc2(221,20.24344,4.824753,50,16.1,3.9) # combine group 1+2 + 3
+```
+#ABneg: n= 280  mean= 20.59571  SD= 5.049421  
+#ABpos: n= 271  mean= 19.47897  SD= 4.93158 
+```{r}
+Edmonds_SF <- esc_mean_sd(grp1m = 20.59571, grp1sd = 5.049421, grp1n = 280,
+                           grp2m = 19.47897, grp2sd = 4.93158, grp2n = 271, es.type = "d")
+Edmonds_SF
+```
+
+
+#Jicha
+#mean, sd stage 0	16.4 (5.5) 59
+#mean, sd stage 0-N	16.6 (4.4) 13
+#mean, sd stage 1	16.2 (5.2) 13
+#mean, sd stage 2	14.4 (4.4) 15
+#mean, sd stage 3	15.9 (4.5) 26
+```{r}
+ABneg <- Calc2(59,16.4,5.5,13,16.6,4.4) # combine group 0+SNAP
+
+#ABpos1 <- Calc2(13,16.2,5.2,15,14.4,4.4) # combine group 1+2
+ABpostot <- Calc2(28,15.23571,4.78456,26,15.9,4.5) # combine group 1+2 + 3
+```
+#ABneg  n= 72  mean= 16.43611  SD= 5.290499 
+#ABpos  n= 54  mean= 15.55555  SD= 4.618019 
+```{r}
+Jicha_SF <- esc_mean_sd(grp1m = 16.43611, grp1sd = 5.290499, grp1n = 72,
+                           grp2m = 15.55555, grp2sd = 4.618019, grp2n = 54, es.type = "d")
+Jicha_SF
+```
+
+#Soldan
+#% correct mean, SD (stage 0)	96.1 (5.9) 102
+#% correct mean, SD (SNAP)	95.1 (6.5) 46 
+#% correct mean, SD (stage 1)	96.4 (5.7) 46
+#% correct mean, SD (stage 2)	94.8 (6.0) 28
+```{r}
+ABneg <- Calc2(102,96.1,5.9,46,95.1,6.5) # combine group 0+SNAP
+
+ABpos <- Calc2(46,96.4,5.7,28,94.8,6.0) # combine group 1+2
+```
+#ABneg n= 148  mean= 95.78919  SD= 6.088219 
+#ABpos  n= 74  mean= 95.79459  SD= 5.826966 
+```{r}
+Soldan_PN <- esc_mean_sd(grp1m = 95.78919, grp1sd = 6.088219, grp1n = 148,
+                           grp2m = 95.79459, grp2sd = 5.826966, grp2n = 74, es.type = "d")
+Soldan_PN
+```
+
+#Hassenstab
+#AB-= 55.88 (4.25) 127, AB+= 56.58 (4.17) 53
+#AB-=53.88 (5.21) 50, AB+=51.59 (6.38) 34
+#264 (TOTAL AB-=177,AB+=87; 65-74 AB-=127, AB+=53; 75+ AB-=50, AB+=34)
+```{r}
+ABneg <- Calc2(127,55.88,4.25,50,53.88,5.21) # combine groups AB-
+
+ABpos <- Calc2(53,56.58,4.17,34,51.59,6.38) # combine groups AB+
+```
+#ABneg  n= 177  mean= 55.31503  SD= 4.615585 
+#ABpos  n= 87  mean= 54.62989  SD= 5.668369 
+```{r}
+Hassenstab_PN <- esc_mean_sd(grp1m = 55.31503, grp1sd = 4.615585, grp1n = 177,
+                           grp2m = 54.62989, grp2sd = 5.668369, grp2n = 87, es.type = "d")
+Hassenstab_PN
+```
+
+###average SD: average the variance, then sqrt(variance)
+#65-74 age
+#ANIMALS AB-=21.14 (5.15), AB+=21.82(4.83); 
+#VEGETABLES AB-=15.05 (4.16), AB+=14.97 (4.50)
+#75+ age
+#ANIMALS AB-=18.31 (4.71), AB+=16.91 (3.87)
+#VEGETABLES AB-=14.14 (4.08), AB+=11.96 (4.03)
+```{r}
+#65-74 age
+#ABneg mean: 
+21.14 + 15.05
+#ABneg SD: 
+sqrt(((5.15^2) + (4.16^2))/2)
+
+#ABpos mean:
+21.82 + 14.97
+#ABposSD:  
+sqrt(((4.83^2) + (4.50^2))/2)
+
+#75+ age
+#ABneg mean: 
+18.31 + 14.14
+#ABneg SD: 
+sqrt(((4.71^2) + (4.08^2))/2)
+
+#ABpos mean:
+16.91 + 11.96
+#ABposSD:  
+sqrt(((3.87^2) + (4.03^2))/2)
+
+```
+
+#Hassenstab
+#ANIMALS AB-=21.14 (5.15) 127, AB+=21.82(4.83) 53
+#ANIMALS AB-=18.31 (4.71) 50, AB+=16.91 (3.87) 34
+#264 (TOTAL AB-=177,AB+=87; 65-74 AB-=127, AB+=53; 75+ AB-=50, AB+=34)
+```{r}
+ABneg <- Calc2(127,21.14,5.15,50,18.31,4.71) # combine groups AB-
+
+ABpos <- Calc2(53,21.82,4.83,34,16.91,3.87) # combine groups AB+
+```
+#ABneg  n= 177  mean= 20.34056  SD= 5.176532
+#ABpos  n= 87  mean= 19.90115  SD= 5.065482 
+```{r}
+Hassenstab_SF <- esc_mean_sd(grp1m = 20.34056, grp1sd = 5.176532, grp1n = 177,
+                           grp2m = 19.90115, grp2sd = 5.065482, grp2n = 87, es.type = "d")
+Hassenstab_SF
+```
+
+
+
+
+

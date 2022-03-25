@@ -1,0 +1,389 @@
+---
+title: "Meta-analyse association amyloid with semantic cognition"
+output: html_notebook
+author: Jet M. J. Vonk
+date (last update): June 16 2020 
+---
+
+#R version
+R.Version()
+
+```{r}
+library(meta)
+library(metafor)
+library(dplyr) #filter
+```
+
+#read in file
+```{r}
+madata <- read.delim("C:/Users/Jet/Dropbox/Vonk_Sys_Meta/R code/2020-06-16 jv_Meta_AmyloidSemantic_data.txt", header=T)
+madata.comp <- read.delim("C:/Users/Jet/Dropbox/Vonk_Sys_Meta/R code/2020-06-26 jv_Meta_AmyloidSemantic_data_comp.txt", header=T)
+
+madata$SCD <- factor(madata$SCD,
+levels = c(0,1),
+labels = c("Sample not selected on SCD", "Sample only SCD"))
+madata$continuous <- factor(madata$continuous,
+levels = c(0,1),
+labels = c("Categorical", "Continuous"))
+madata$controlled <- factor(madata$controlled,
+levels = c(0,1),
+labels = c("Unadjusted for covariates", "Adjusted for covariates"))
+madata$Age2 <- factor(madata$Age2,
+levels = c(0,1),
+labels = c("Mean age sample <70", "Mean age sample >70"))
+madata$amymeth <- factor(madata$amymeth,
+levels = c(1,2,3,4),
+labels = c("Histopathology", "CSF", "PET", "Blood"))
+
+
+madata.BNT <- filter(madata, TE_BNT != "NA")
+madata.SF <- filter(madata, TE_SF != "NA")
+madata.voc <- filter(madata, TE_voc != "NA")
+madata.WAIS <- filter(madata, TE_WAIS != "NA")
+
+madata.comp1_2 <- filter(madata.comp, task == 1 | task == 2)
+madata.comp1_3 <- filter(madata.comp, task == 1 | task == 3)
+madata.comp1_4 <- filter(madata.comp, task == 1 | task == 4)
+madata.comp2_3 <- filter(madata.comp, task == 2 | task == 3)
+madata.comp2_4 <- filter(madata.comp, task == 2 | task == 4)
+madata.comp3_4 <- filter(madata.comp, task == 3 | task == 4)
+```
+
+
+
+#meta analyses voor mean difference
+#BNT
+```{r}
+m.overall.BNT <- metagen(TE_BNT,
+                  seTE_BNT,
+                  data = madata.BNT,
+                  studlab = paste(Author),
+                  comb.fixed = FALSE,
+                  comb.random = TRUE,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+print(m.overall.BNT, digits=2) 
+```
+
+#Semantic fluency
+```{r}
+m.overall.SF <- metagen(TE_SF,
+                  seTE_SF,
+                  data = madata.SF,
+                  studlab = paste(Author),
+                  comb.fixed = FALSE,
+                  comb.random = TRUE,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+print(m.overall.SF, digits=2)
+```
+
+#Vocabulary
+```{r}
+m.overall.voc <- metagen(TE_voc,
+                  seTE_voc,
+                  data = madata.voc,
+                  studlab = paste(Author),
+                  comb.fixed = T,
+                  comb.random = F,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+print(m.overall.voc, digits=2) 
+```
+
+#WAIS information
+```{r}
+m.overall.WAIS <- metagen(TE_WAIS,
+                  seTE_WAIS,
+                  data = madata.WAIS,
+                  studlab = paste(Author),
+                  comb.fixed = T,
+                  comb.random = F,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+print(m.overall.WAIS, digits=2) 
+```
+
+#Test across domains
+#BNT vs semantic fluency
+```{r}
+m.overall.PN_SF <- metagen(TE,
+                  seTE,
+                  data = madata.comp1_2,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+ 
+update(m.overall.PN_SF, byvar=madata.comp1_2$task)
+```
+
+#BNT vs vocabulary
+```{r}
+m.overall.PN_voc <- metagen(TE,
+                  seTE,
+                  data = madata.comp1_3,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+
+update(m.overall.PN_voc, byvar=madata.comp1_3$task)
+```
+
+#BNT vs WAIS
+```{r}
+m.overall.PN_WAIS <- metagen(TE,
+                  seTE,
+                  data = madata.comp1_4,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+
+update(m.overall.PN_WAIS, byvar=madata.comp1_4$task)
+```
+
+
+#semantic fluency vs vocabulary
+```{r}
+m.overall.SF_voc <- metagen(TE,
+                  seTE,
+                  data = madata.comp2_3,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+
+update(m.overall.SF_voc, byvar=madata.comp2_3$task)
+```
+
+
+#semantic fluency vs WAIS
+```{r}
+m.overall.SF_WAIS <- metagen(TE,
+                  seTE,
+                  data = madata.comp2_4,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+ 
+update(m.overall.SF_WAIS, byvar=madata.comp2_4$task)
+```
+
+#vocabulary vs WAIS
+```{r}
+m.overall.voc_WAIS <- metagen(TE,
+                  seTE,
+                  data = madata.comp3_4,
+                  studlab = paste(Author),
+                  comb.fixed = F,
+                  comb.random = T,
+                  method.tau = "DL", #SJ = Sidik-Jonkman estimator
+                  hakn = FALSE, #TRUE = Knapp-Hartung(-Sidik-Jonkman) adjustment
+                  prediction = F,
+                  sm = "SMD")
+ 
+update(m.overall.voc_WAIS, byvar=madata.comp3_4$task)
+```
+
+
+
+
+#meta-regression to account for age in dichotomous studies BNT
+```{r}
+metareg(m.overall.BNT,Age)
+```
+
+#meta-regression to account for age in Semantic fluency
+```{r}
+metareg(m.overall.SF,Age)
+```
+
+#metacont subgroup analyses	PICTURE NAMING			
+```{r}
+m.overall.BNT_SCD <- update(m.overall.BNT, byvar=madata.BNT$SCD, print.byvar = F)
+m.overall.BNT_SCD 
+```
+
+```{r}
+m.overall.BNT_amymeth <- update(m.overall.BNT, byvar=madata.BNT$amymeth, print.byvar = F)
+m.overall.BNT_amymeth
+```
+
+```{r}
+m.overall.BNT_Age2 <- update(m.overall.BNT, byvar=madata.BNT$Age2, print.byvar = F)
+m.overall.BNT_Age2
+```
+
+```{r}
+m.overall.BNT_controlled <- update(m.overall.BNT, byvar=madata.BNT$controlled, print.byvar = F)
+m.overall.BNT_controlled
+```
+
+```{r}
+m.overall.BNT_continuous <- update(m.overall.BNT, byvar=madata.BNT$continuous, print.byvar = F)
+m.overall.BNT_continuous
+```
+
+
+#metacont subgroup analyses	SEMANTIC FLUENCY			
+```{r}
+m.overall.SF_SCD <- update(m.overall.SF, byvar=madata.SF$SCD, print.byvar = F)
+```
+
+```{r}
+m.overall.SF_amymeth <- update(m.overall.SF, byvar=madata.SF$amymeth, print.byvar = F)
+```
+
+```{r}
+m.overall.SF_Age2 <- update(m.overall.SF, byvar=madata.SF$Age2, print.byvar = F)
+```
+
+```{r}
+m.overall.SF_controlled <- update(m.overall.SF, byvar=madata.SF$controlled, print.byvar = F)
+```
+
+```{r}
+m.overall.SF_continuous <- update(m.overall.SF, byvar=madata.SF$continuous, print.byvar = F)
+```
+
+
+#forest plot BNT (and save)
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_overall_BNT.png", width=10.5, height=9, unit="in", res=300)
+forest(m.overall.BNT, xlim=c(-1.5,2.3),smlab = "Picture naming", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="")
+dev.off()
+```
+
+#forest plot SF (and save)
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_overall_SF.png", width=10.5, height=9, unit="in", res=300)
+forest(m.overall.SF, xlim=c(-1.5,2.3), smlab = "Semantic fluency", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="")
+dev.off()
+```
+
+#forest plot vocabulary (and save)
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_overall_voc.png", width=10.5, height=9, unit="in", res=300)
+forest(m.overall.voc, xlim=c(-1.5,2.3), smlab = "Vocabulary", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="")
+dev.off()
+```
+
+#forest plot WAIS Information (and save)
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_overall_WAIS.png", width=10.5, height=9, unit="in", res=300)
+forest(m.overall.WAIS, xlim=c(-1.5,2.3), smlab = "WAIS Information", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="")
+dev.off()
+```
+
+          
+#funnelplot
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/funnel_BNT.png", width=6, height=4, unit="in", res=300)
+funnel(m.overall.BNT, main="Picture naming", ylim=c(0.7,0.0), xlab = "Standardized Mean Difference")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/funnel_SF.png", width=6, height=4, unit="in", res=300)
+funnel(m.overall.SF, main="Semantic fluency", ylim=c(0.7,0.0), xlab = "Standardized Mean Difference")
+dev.off()
+```
+
+#Egger test voor bias
+```{r}
+metabias(m.overall.BNT)
+```
+#Egger test voor bias
+```{r}
+metabias(m.overall.SF)
+```
+
+###FOREST PLOTS META-ANALYSES
+
+###PICTURE NAMING
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_BNT_SCD.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.BNT_SCD, xlim=c(-1.5,2.3),smlab = "Picture naming: Sujective cognitive decline", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_BNT_continuous.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.BNT_continuous, xlim=c(-1.5,2.3),smlab = "Picture naming: Continuous/categorical scale", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_BNT_controlled.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.BNT_controlled, xlim=c(-1.5,2.3),smlab = "Picture naming: Covariate adjustment", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_BNT_Age2.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.BNT_Age2, xlim=c(-1.5,2.3),smlab = "Picture naming: Age below or above 70", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_BNT_amymeth.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.BNT_amymeth, xlim=c(-1.5,2.3),smlab = "Picture naming: Amyloid method", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+###SEMANTIC FLUENCY
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_SF_SCD.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.SF_SCD, xlim=c(-1.5,2.3),smlab = "Semantic fluency: Sujective cognitive decline", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_SF_continuous.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.SF_continuous, xlim=c(-1.5,2.3),smlab = "Semantic fluency: Continuous/categorical scale", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_SF_controlled.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.SF_controlled, xlim=c(-1.5,2.3),smlab = "Semantic fluency: Covariate adjustment", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_SF_Age2.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.SF_Age2, xlim=c(-1.5,2.3),smlab = "Semantic fluency: Age below or above 70", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
+
+```{r}
+png(filename="C:/Users/Jet/Dropbox/Vonk_Sys_Meta/Tables & Figures/forest_sub_SF_amymeth.png", width=10.5, height=11, unit="in", res=300)
+forest(m.overall.SF_amymeth, xlim=c(-1.5,2.3),smlab = "Semantic fluency: Amyloid method", plotwidth="12cm", leftcols =c("studlab","size"), leftlabs=c("Study","Sample size"), rightlabs=c("Effect size","95% CI", "Weight"), just="center", xlab = "Cohen's d", hetlab="", resid.hetlab = "Res. heterogeneity: ")
+dev.off()
+```
